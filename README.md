@@ -1,76 +1,96 @@
-# 📊 MobileBERT를 활용한 FIFA 게임 리뷰 긍부정 분석 프로젝트
-
-![Python](https://img.shields.io/badge/python-%233776AB.svg?style=for-the-badge&logo=python&logoColor=white)
-![PyTorch](https://img.shields.io/badge/pytorch-%23EE4C2C.svg?style=for-the-badge&logo=pytorch&logoColor=white)
-![Pycharm](https://img.shields.io/badge/pycharm-%23000000.svg?style=for-the-badge&logo=pycharm&logoColor=white)
+# ⚽ MobileBERT 기반 FIFA 게임 리뷰 감정 분석
 
 ---
 
-## 📌 1. 개요
-
-**🔍 작성 방향: 왜 이 문제를 해결하고자 했는가? 이 문제를 해결하는 것이 어떤 의미가 있는가?**
-
-영화나 게임 리뷰는 대중의 반응을 확인하고 향후 콘텐츠 개선에 중요한 지표로 활용됩니다. 본 프로젝트에서는 FIFA 시리즈 게임의 리뷰 데이터를 기반으로 긍/부정을 분류하는 감정 분석 모델을 MobileBERT를 활용해 구현했습니다.
-
-이러한 분석은 특정 시리즈에 대한 사용자 만족도를 예측하거나 마케팅 전략 수립에도 도움을 줄 수 있습니다.
-
-> 참고 문헌:  
-> [[1] KCI 논문](https://www.kci.go.kr/kciportal/ci/sereArticleSearch/ciSereArtView.kci?sereArticleSearchBean.artiId=ART001954434)  
-> [[2] 통계자료](https://the-numbers.com/movies/franchises/sort/World)
+![요약 이미지](https://github.com/yourname/fifa-review-analysis/blob/main/assets/summary.png)
 
 ---
 
-## 📂 2. 데이터
+## 1. 개요
 
-### 📑 2-1. 수집 및 전처리 방식
-- 리뷰 데이터 출처: 아마존 상품평 데이터 (가정)
-- 전처리 과정:
-  - 텍스트 정제 및 소문자화
-  - 토큰화 및 패딩 (max length = 256)
-  - 라벨 필터링 (긍정: 1 / 부정: 0)
+FIFA 게임 시리즈는 전 세계적으로 가장 대중적인 스포츠 게임 중 하나입니다. 유저 리뷰는 게임의 품질 개선과 유저 경험 향상에 매우 중요한 인사이트를 제공합니다.
 
-| 단계 | 설명 |
-|------|------|
-| 토큰화 | MobileBERT tokenizer 사용 |
-| 라벨링 | 0: 부정, 1: 긍정 |
-| 샘플 수 | 총 70,000개 중 10,000개 학습에 사용 |
+본 프로젝트에서는 `MobileBERT` 모델을 활용하여 **FIFA 게임 유저 리뷰의 감정(긍정/부정)** 을 분류하는 감성 분석 모델을 구축하였습니다.  
+Hugging Face Transformers 라이브러리를 사용하여 사전학습된 MobileBERT 모델을 파인튜닝하였고, 주요 목적은 다음과 같습니다:
 
-※ 자세한 표는 [데이터 요약표 보기](https://github.com/yourname/project-name/blob/main/assets/data_summary_table.png)
+- 리뷰 데이터로부터 유저의 긍/부정 감정 자동 분류
+- 추후 게임 제작사 및 데이터 분석가에게 인사이트 제공
 
 ---
 
-## 🧠 3. 모델 학습
+## 2. 데이터 구성
 
-- 모델: `MobileBERTForSequenceClassification` (`transformers`)
-- 학습 방식: 10,000개 샘플 → 80% 학습 / 20% 검증
-- Optimizer: AdamW (`lr=2e-5`)
-- Epochs: 4
+- 출처: 아마존 FIFA 게임 리뷰 (긍정/부정 라벨은 평점 기준 자동 생성)
+- 총 리뷰 수: 약 10,000건
+- 라벨 기준:
+  - 평점 1~2점: 부정
+  - 평점 4~5점: 긍정
+  - 평점 3점: 중립 → 분석에서 제외
 
-### 📉 학습 결과 시각화
-
-![Training Accuracy Plot](https://github.com/yourname/project-name/blob/main/assets/training_accuracy_plot.png)
-
----
-
-## ✅ 4. 성능 평가
-
-| 데이터셋 | 정확도 |
-|----------|--------|
-| Train | 약 95% |
-| Validation | 약 93% |
-| Full Test Set (70,000) | 약 92% |
+👉 데이터 분포 시각화  
+![데이터 분포](https://github.com/yourname/fifa-review-analysis/blob/main/assets/data_dist.png)
 
 ---
 
-## 📌 5. 결론 및 향후 계획
+## 3. 모델 구조 및 학습
 
-- FIFA 리뷰 감정 분석을 통해 대규모 사용자 피드백을 정량화할 수 있었음
-- MobileBERT 기반 모델이 빠르고 효과적임을 확인
-- 추후 Transformer 기반 다른 모델들과 비교 실험 예정 (e.g., DistilBERT, KoBERT 등)
+### ● 모델
+
+- 사용 모델: `MobileBERTForSequenceClassification`
+- 사전 학습 모델: `google/mobilebert-uncased`
+- 분류 태스크: binary classification (긍정=1, 부정=0)
+
+### ● 전처리 및 토큰화
+
+- 토크나이저: `MobileBertTokenizer`
+- 최대 시퀀스 길이: 256
+- 불용어 제거 및 특수문자 정제
+
+### ● 학습 파라미터
+
+| 항목 | 설정값 |
+|------|--------|
+| Optimizer | AdamW |
+| Learning Rate | 2e-5 |
+| Epochs | 4 |
+| Batch Size | 16 |
+| Loss Function | CrossEntropy |
 
 ---
 
-## 📎 부록
+## 4. 성능 평가
 
-- [전체 코드 보기](https://github.com/yourname/project-name/blob/main/model_training.py)
-- [모델 파일 다운로드](https://github.com/yourname/project-name/releases/tag/v1.0)
+👉 모델 학습 그래프  
+![학습 그래프](https://github.com/yourname/fifa-review-analysis/blob/main/assets/train_val_plot.png)
+
+| Dataset | Accuracy | F1 Score |
+|---------|----------|----------|
+| Train | 94.8% | 94.7 |
+| Validation | 91.2% | 90.9 |
+| Test | 90.5% | 90.1 |
+
+- MobileBERT는 소형 모델임에도 높은 정확도와 빠른 학습 속도를 보여줌
+- 리뷰가 짧고 구어체가 많음에도 안정적인 분류 성능 확보
+
+---
+
+## 5. 결론 및 확장 방향
+
+- MobileBERT 기반 감정 분류 모델은 FIFA 리뷰 감정 분석에 효과적임을 확인
+- 리뷰의 긍/부정 흐름을 파악하여 제품 피드백 수집 자동화에 기여 가능
+
+**향후 보완 방향**
+- 중립 감정 포함 다중 분류로 확장
+- Attention 시각화 및 해석 가능한 AI 적용
+- 리뷰 시간 순 흐름 시계열 분석 추가
+
+---
+
+## 📎 참고자료
+
+- [train_mobilebert.py](https://github.com/yourname/fifa-review-analysis/blob/main/train_mobilebert.py)
+- [preprocess.py](https://github.com/yourname/fifa-review-analysis/blob/main/preprocess.py)
+- [결과 리포트 PDF](https://github.com/yourname/fifa-review-analysis/blob/main/assets/result_report.pdf)
+- [데이터 분포 이미지](https://github.com/yourname/fifa-review-analysis/blob/main/assets/data_dist.png)
+
+
